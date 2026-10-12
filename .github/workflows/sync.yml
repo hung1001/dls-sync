@@ -1,0 +1,32 @@
+name: Sync players
+
+on:
+  schedule:
+    - cron: '0 4 * * 0' # Sundays 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: 'Only check that the source answers (no sync)'
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_URL: ${{ secrets.SOURCE_URL }}
+      INGEST_URL: ${{ secrets.INGEST_URL }}
+      INGEST_KEY: ${{ secrets.INGEST_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet curl_cffi
+      - name: Probe
+        if: ${{ inputs.probe }}
+        run: python sync.py --probe
+      - name: Sync
+        if: ${{ !inputs.probe }}
+        run: python sync.py
